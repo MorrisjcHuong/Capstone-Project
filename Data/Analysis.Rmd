@@ -1,0 +1,151 @@
+---
+title: "IMIProject"
+author: "Schabjc"
+date: "Friday, May 29, 2015"
+output: html_document
+---
+I need to load the excel (data) spread sheet file from my computer into r studio.
+
+```{r}
+setwd("C:/Users/Schab/Desktop/Capstone Projects/data")  
+```
+```{r}
+IMIProject<-read.csv("IMIProject.csv")
+```
+Next, I want to run the str command to ensure the data was loaded in r studio.
+
+```{r}
+str(IMIProject)
+```
+Perfect, I have my 48 observations and 10 variables.  However, I see a problem with my data. Subject should be a factor variable. I want the testime to reflect pre before post. So I'm going to refactor those variables. 
+
+```{r}
+IMIProject$sub<-factor(IMIProject$sub)
+```
+
+```{r}
+IMIProject$testtime<-factor(IMIProject$testtime, levels=c("pre", "post"))
+```
+Ok, I have completed the steps to fix the data. Next,I need to look at the structure and see if it's correct.
+
+```{r}
+str(IMIProject)
+```
+Not necessary, but I want to look at the summary of the IMIProject.
+
+```{r}
+summary(IMIProject)
+
+```
+Next, I will describe the data.  I need to find the minimum,mean, and median for pretest imiinterest,imivalue,imichoice,imicompetence,imitension
+
+```{r}
+median(IMIProject$imiinterest[IMIProject$testtime=="pre"])
+median(IMIProject$imivalue[IMIProject$testtime=="pre"])
+median(IMIProject$imichoice[IMIProject$testtime=="pre"])
+median(IMIProject$imicompetence[IMIProject$testtime=="pre"])
+median(IMIProject$imitension[IMIProject$testtime=="pre"])
+
+```
+
+Next, I want the IMIProject totals
+```{r}
+ IMIProject$Total
+```
+
+I want to look at the totals to ensure totals are correct
+
+```{r}
+ head(IMIProject)
+```
+
+I want to run a 2-way mixed ANOVA because one or more of the variables is between-subjects
+
+```{r}
+summary(aov(Total~testtime*feedback+Error(sub/testtime),data=IMIProject))         
+```
+
+From these results, we can conclude The total IMIscore was not related to their feedback, F(1,22) =0.284, P=0.599.  I can also conclude that testtime had effect total imiscore, F(1,22)=10.769, p=.003.  I can also conclude that there was an interaction between testtime and feedback, F(1,22)=3.462, p=.0.0762.
+
+Next, I need to test my 4 hypothesis.  I will do this by looking at IMI Pretest scores and divide participants up into groups based on median.  Subjects above the median score will be high in IM and below the median are low in IM.  I will exclude any subjects that fall in the middle.
+
+```{r}
+head(1:24)
+head(IMIProject$imiinterest[IMIProject$testtime=="pre"])
+median(IMIProject$imiinterest[IMIProject$testtime=="pre"])
+```
+
+Median score for imiinterest is 13. I found 2 subjects high in IM and 2 subjects low in IM and will exclude 2 subjects.
+
+```{r}
+head(IMIProject$imivalue[IMIProject$testtime=="pre"])
+median(IMIProject$imivalue[IMIProject$testtime=="pre"])
+```
+
+Median score for imivalue is 11. I found 1 subject high in IM and 3 subjects low in IM and will exclude 2 subject.
+
+```{r}
+head(IMIProject$imichoice[IMIProject$testtime=="pre"])
+median(IMIProject$imichoice[IMIProject$testtime=="pre"])
+```
+
+Median score for imichoice is 14. I found 2 subjects high in IM and 3 subjects low in IM and will exclude 1 subject.
+
+```{r}
+head(IMIProject$imicompetence[IMIProject$testtime=="pre"])
+median(IMIProject$imicompetence[IMIProject$testtime=="pre"])
+```
+
+Median score for imicompetence is 11. I found 2 subjects high in Im and 3 subjects low in IM and will exclude 1 subject.
+
+```{r}
+head(IMIProject$imitension[IMIProject$testtime=="pre"])
+median(IMIProject$imitension[IMIProject$testtime=="pre"])
+```
+
+Median score for imitension is 8. I found 1 subject high in IM and 5 subjects low in IM.
+
+After determining which subjects are high and low in intrinsic motivation and excluding all subjects that fall in the middle of the media.  I will need to run a Regression analysis on total posttest IMI score using feedback and pretest group as factors.
+
+```{r}
+summary(lm(Total[testtime=="post"]~Total[testtime=="pre"]*feedback[testtime=="pre"],data=IMIProject))
+
+```
+Next, I will run a Scatter plot, but need to run dplyr,ggplot2,gplots.
+
+```{r}
+
+summary(lm(Total[testtime=="post"]~Total[testtime=="pre"],data=IMIProject[IMIProject$feedback=="Positive",]))
+summary(lm(Total[testtime=="post"]~Total[testtime=="pre"],data=IMIProject[IMIProject$feedback=="Negative",]))
+```
+
+```{r}
+library("dplyr")
+library("ggplot2")
+library("gplots")
+```
+```{r}
+Positive=col2hex("green")
+Negative=col2hex("red")
+ggplot(IMIProject,aes(x=Total[testtime=="pre"],y=Total[testtime=="post"],color=feedback[testtime=="pre"]))+
+    geom_point(size=2)+
+    geom_abline(intercept=33.58, slope=.26,color=Positive)+
+    geom_abline(intercept=14.69, slope=.68,color=Negative)+
+    scale_color_manual(values=c(Negative,Positive),breaks=c("Negative","Positive"),labels=c("Negative","Positive"))+
+    ggtitle("Motivation Predicted by Feedback Type")+
+    labs(x="Motivation (Pretest IMI Score)",y="Motivation (Posttest IMI Score)")+
+    theme(plot.title=element_text(size=15,face="bold", vjust=.5))+
+    theme(axis.title.x=element_text(size=12,face="bold", vjust=-.25))+
+    theme(axis.title.y=element_text(size=12,face="bold", vjust=1))+
+    theme(axis.text.x=element_text(size=10,face="bold",color="black"))+
+    theme(axis.text.y=element_text(size=10,face="bold",color="black"))+
+    theme(panel.border=element_blank(), axis.line=element_line())+
+    theme(panel.grid.major.x=element_blank())+
+    theme(panel.grid.minor.x=element_blank())+
+    theme(panel.grid.major.y=element_line(color="darkgrey"))+
+    theme(panel.grid.minor.y=element_blank())+
+    theme(legend.position=c(.83,.2))+
+    theme(legend.background=element_blank())+
+    theme(legend.title=element_blank())+
+    theme(legend.text=element_text(size=10,face="bold"))
+    ```
